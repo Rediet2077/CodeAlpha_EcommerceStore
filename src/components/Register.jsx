@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './Register.css';
 
 function Register() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -14,20 +19,32 @@ function Register() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
-    // Handle registration logic here
-    console.log('Registering:', formData);
-    alert('Registration successful!');
+
+    setError('');
+    setLoading(true);
+
+    const result = await register(formData.username, formData.email, formData.password);
+
+    setLoading(false);
+
+    if (result.success) {
+      alert('Registration successful!');
+      navigate('/');
+    } else {
+      setError(result.message || "Registration failed");
+    }
   };
 
   return (
     <div className="auth-container">
       <h2 className="auth-title">Register</h2>
+      {error && <div className="auth-error" style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
       <form onSubmit={handleSubmit} className="auth-form">
         <div className="form-group">
           <label htmlFor="username" className="form-label">Username:</label>
@@ -77,8 +94,8 @@ function Register() {
             className="form-input"
           />
         </div>
-        <button type="submit" className="auth-button">
-          Register
+        <button type="submit" className="auth-button" disabled={loading}>
+          {loading ? 'Registering...' : 'Register'}
         </button>
       </form>
       <p className="auth-footer">
